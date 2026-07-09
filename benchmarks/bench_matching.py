@@ -28,7 +28,7 @@ def populated_book():
 
 
 def test_add_limit_order_latency(benchmark):
-    """Benchmark: single add_limit_order call latency."""
+    """Latency of a single add_limit_order call."""
     book = OrderBook()
     orders = [
         Order(f"O{i}", Side.BUY, round(100 - random.random(), 2),
@@ -45,7 +45,7 @@ def test_add_limit_order_latency(benchmark):
 
 
 def test_market_order_latency(benchmark, populated_book):
-    """Benchmark: single market order match latency against pre-populated book."""
+    """Latency of a single market order match against a populated book."""
     book, engine = populated_book
     counter = {"i": 0}
 
@@ -63,10 +63,7 @@ def test_market_order_latency(benchmark, populated_book):
 
 
 def test_one_million_orders_throughput():
-    """
-    Non-benchmark: raw throughput over 1M mixed orders.
-    Asserts >= 500k orders/sec. Print p50/p95/p99 latency.
-    """
+    """1M mixed orders. Asserts >= 500k orders/sec, prints p50/p95/p99."""
     import statistics
 
     book, engine = _make_book_with_orders(100_000)
@@ -105,7 +102,7 @@ def test_one_million_orders_throughput():
 
 
 def test_cython_market_order_latency(benchmark, populated_book):
-    """Benchmark: Cython market order match latency vs Python."""
+    """Cython vs Python market order match latency."""
     pytest.importorskip("src.cython_matching_engine")
     from src.cython_matching_engine import CythonMatchingEngine
     book, _ = populated_book

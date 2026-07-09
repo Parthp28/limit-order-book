@@ -1,6 +1,6 @@
 # Limit Order Book Engine
 
-A production-grade price-time priority limit order book engine in Python that processes **715k orders/sec** with **p99 latency of 5.08µs** on the matching hot path.
+A price-time priority limit order book in Python: **715k orders/sec**, **p99 latency 5.08µs** on the matching hot path.
 
 ## Architecture
 
@@ -36,15 +36,19 @@ A production-grade price-time priority limit order book engine in Python that pr
 | Best price | O(log n) | **O(1)** |
 | Cancel | **O(n)** | O(log n) |
 
-Real markets have a cancel:new ratio of roughly 10:1. Cancel performance dominates, so SortedDict wins. Bids use a negated key (`lambda x: -x`) so the highest bid sits at index 0.
+Cancel:new ratio in real markets is roughly 10:1. Cancel cost dominates, so SortedDict wins. Bids use a negated key (`lambda x: -x`) so the highest bid sits at index 0.
 
 ### Lazy deletion
 
-`deque` has no O(1) remove-by-value. Scanning to find and remove an order is O(n) per cancel — catastrophic at 500k orders/sec. Instead, cancel sets `status = CANCELLED` on the `Order` object in `order_lookup` (O(1)). The matching engine skips cancelled orders during iteration and `popleft()` cleans them up.
+`deque` has no O(1) remove-by-value. Scanning to find and remove an order is O(n) per cancel. At 500k orders/sec that adds up fast.
+
+Cancel sets `status = CANCELLED` on the `Order` in `order_lookup` (O(1)). The matching engine skips cancelled orders during iteration. `popleft()` cleans them up on the next sweep.
 
 ### Cython hot path
 
-Cython compiles only the market-order inner loop (`CythonMatchingEngine.match_market_order_fast`). `cdef int` and `cdef double` eliminate Python boxing in arithmetic-heavy code. SortedDict and deque remain Python objects — realistic speedup is 2–5x on the inner loop only, not the whole engine.
+Cython compiles only the market-order inner loop (`CythonMatchingEngine.match_market_order_fast`). `cdef int` and `cdef double` cut Python boxing in arithmetic-heavy code.
+
+SortedDict and deque stay as Python objects. Realistic speedup is 2-5x on the inner loop, not the whole engine.
 
 ## Benchmark results
 
@@ -83,4 +87,8 @@ pytest benchmarks/bench_matching.py --benchmark-only -v
 
 ## What this demonstrates
 
-This project implements the core matching engine that powers every electronic exchange — price-time priority, partial fills, IOC/FOK semantics, and FIX 4.2 wire protocol parsing. The data structure choices (SortedDict, lazy deletion, deque FIFO) are driven by real market microstructure: cancel-heavy workloads, nanosecond time priority, and maker-price execution rules. Benchmarked at 715k orders/sec with sub-6µs p99 latency in pure Python, with a Cython-optimized hot path for the tightest matching loop. Built to be explained line-by-line in a quant SWE interview at Akuna, IMC, or Chicago Trading Company.
+The matching engine behind every electronic exchange: price-time priority, partial fills, IOC/FOK semantics, FIX 4.2 wire parsing.
+
+Data structure choices follow real market microstructure. Cancel-heavy workloads, nanosecond time priority, maker-price execution rules. SortedDict, lazy deletion, deque FIFO.
+
+715k orders/sec with sub-6µs p99 in pure Python. Cython on the tightest matching loop. Built to walk through line by line in a quant SWE interview.

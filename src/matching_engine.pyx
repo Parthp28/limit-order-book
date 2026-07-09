@@ -4,18 +4,14 @@ from src.order import Order, Fill, Side, OrderStatus
 
 
 cdef class CythonMatchingEngine:
-  # Interview signal: why Cython only on the inner loop?
-  # Static C types eliminate Python boxing in arithmetic-heavy hot path.
+  # Why: Cython only on the inner loop? C types cut Python boxing in the hot path.
   cdef object book
 
   def __init__(self, book):
     self.book = book
 
   cpdef list match_market_order_fast(self, str taker_id, str side_str, int quantity):
-    """
-    Cython-optimized market order matching inner loop.
-    Time complexity: O(k * m) where k=price levels consumed, m=orders per level.
-    """
+    """Cython market order inner loop. O(k * m)."""
     cdef int remaining = quantity
     cdef int fill_qty
     cdef double fill_price

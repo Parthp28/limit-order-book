@@ -19,22 +19,14 @@ class ModifyRequest:
 
 
 class FIXParser:
-    """
-    Parses FIX 4.2 messages.
-    Uses tag lookup dict — O(1) per tag vs O(n) if-elif chain.
-    """
+    """FIX 4.2 parser. Tag dict lookup is O(1) per field."""
 
     SIDE_MAP = {"1": Side.BUY, "2": Side.SELL}
     REQUIRED_NEW_ORDER = {"11", "54", "38", "40"}
 
     def parse(self, raw: str) -> Order | CancelRequest | ModifyRequest | None:
-        """
-        Parse raw FIX string. Return None on missing required tags or unknown MsgType.
-        Time complexity: O(n) where n = number of fields in message.
-        """
-        # Interview signal: what is FIX protocol?
-        # The messaging standard used by every exchange, broker, trading firm since 1992.
-        # Every order you've ever placed eventually becomes a FIX message.
+        """Parse FIX string. None if invalid. O(n) fields."""
+        # Why: FIX protocol? Wire format every exchange uses since 1992.
         tags: dict[str, str] = {}
         for field in raw.split(SOH):
             if not field:
@@ -55,7 +47,7 @@ class FIXParser:
         return None
 
     def _parse_new_order(self, tags: dict) -> Order | None:
-        """Parse New Order Single (35=D). Time complexity: O(1)."""
+        """New Order Single (35=D). O(1)."""
         if not self.REQUIRED_NEW_ORDER.issubset(tags.keys()):
             return None
 
@@ -76,13 +68,13 @@ class FIXParser:
         )
 
     def _parse_cancel(self, tags: dict) -> CancelRequest | None:
-        """Parse Order Cancel Request (35=F). Time complexity: O(1)."""
+        """Order Cancel Request (35=F). O(1)."""
         if "11" not in tags or "37" not in tags:
             return None
         return CancelRequest(order_id=tags["11"], orig_order_id=tags["37"])
 
     def _parse_modify(self, tags: dict) -> ModifyRequest | None:
-        """Parse Order Cancel/Replace Request (35=G). Time complexity: O(1)."""
+        """Order Cancel/Replace Request (35=G). O(1)."""
         if "11" not in tags or "37" not in tags:
             return None
         return ModifyRequest(
@@ -94,7 +86,7 @@ class FIXParser:
 
     @staticmethod
     def _resolve_order_type(ord_type: str, tif: str) -> OrderType:
-        """Map FIX OrdType + TimeInForce to OrderType. Time complexity: O(1)."""
+        """Map FIX OrdType + TimeInForce to OrderType. O(1)."""
         if ord_type == "1":
             return OrderType.MARKET
         if tif == "3":

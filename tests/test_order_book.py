@@ -5,8 +5,6 @@ from src.matching_engine import MatchingEngine
 from src.fix_parser import FIXParser, SOH
 
 
-# ── Module 1: order.py ──────────────────────────────────────────────────────
-
 def test_order_default_status_is_active():
     order = Order("ORD001", Side.BUY, 100.50, 100, OrderType.LIMIT)
     assert order.status == OrderStatus.ACTIVE
@@ -23,7 +21,7 @@ def test_order_filled_quantity_starts_zero():
 
 
 def test_fill_price_is_makers_price():
-    """Fill price must always be the maker's price, not the taker's limit."""
+    """Fill price is always the maker's price, not the taker's limit."""
     fill = Fill(
         maker_order_id="MAKER001",
         taker_order_id="TAKER001",
@@ -32,8 +30,6 @@ def test_fill_price_is_makers_price():
     )
     assert fill.price == 100.50
 
-
-# ── Module 2: order_book.py ─────────────────────────────────────────────────
 
 def test_add_limit_buy_appears_in_bids():
     book = OrderBook()
@@ -149,8 +145,6 @@ def test_empty_price_level_cleanup():
     book._remove_empty_level(book.bids, 100.00)
     assert 100.00 not in book.bids
 
-
-# ── Module 3: matching_engine.py ────────────────────────────────────────────
 
 def _make_book_with_asks():
     book = OrderBook()
@@ -309,8 +303,6 @@ def test_fill_price_is_always_maker_price():
     assert fills[0].price == 100.50
     assert fills[0].maker_order_id == "S1"
 
-
-# ── Module 4: fix_parser.py ─────────────────────────────────────────────────
 
 def test_fix_new_limit_buy_all_fields_correct():
     parser = FIXParser()

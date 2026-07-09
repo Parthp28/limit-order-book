@@ -11,37 +11,37 @@ class Side(Enum):
 class OrderType(Enum):
     LIMIT = "LIMIT"
     MARKET = "MARKET"
-    IOC = "IOC"    # Immediate-Or-Cancel: fill what you can, cancel the rest
-    FOK = "FOK"    # Fill-Or-Kill: fill everything or fill nothing
+    IOC = "IOC"    # fill what you can, cancel the rest
+    FOK = "FOK"    # fill everything or nothing
 
 
 class OrderStatus(Enum):
     ACTIVE = "ACTIVE"
-    CANCELLED = "CANCELLED"    # lazy deletion flag — order stays in deque
+    CANCELLED = "CANCELLED"    # lazy deletion flag, order stays in deque
     FILLED = "FILLED"
     PARTIALLY_FILLED = "PARTIALLY_FILLED"
 
 
 @dataclass
 class Order:
-    # Interview signal: why nanoseconds? microsecond-level ordering matters
-    # in price-time priority. time.time() returns float seconds — not precise enough.
+    # Why: nanoseconds? microsecond ordering matters for price-time priority.
+    # time.time() returns float seconds, not precise enough.
     order_id: str
     side: Side
     price: float                  # 0.0 for market orders
-    quantity: int                 # REMAINING unfilled quantity — decremented on partial fill
+    quantity: int                 # remaining unfilled qty, decremented on partial fill
     order_type: OrderType
-    timestamp: int = field(default_factory=time.time_ns)    # nanosecond precision
+    timestamp: int = field(default_factory=time.time_ns)
     status: OrderStatus = field(default=OrderStatus.ACTIVE)
-    filled_quantity: int = field(default=0)                 # total filled so far
+    filled_quantity: int = field(default=0)
 
 
 @dataclass
 class Fill:
-    """One execution event. One market order may generate multiple Fills."""
-    # Interview signal: maker sets the price. taker is the aggressive order.
-    maker_order_id: str     # passive order already in the book
-    taker_order_id: str     # aggressive order that just arrived
-    price: float            # always the maker's price — maker sets the price
-    quantity: int           # shares filled in this single execution
+    """One fill event. A market order can produce several."""
+    # Why: maker sets the price. taker is the aggressive order.
+    maker_order_id: str
+    taker_order_id: str
+    price: float            # always the maker's price
+    quantity: int
     timestamp: int = field(default_factory=time.time_ns)

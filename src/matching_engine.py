@@ -3,23 +3,14 @@ from src.order_book import OrderBook
 
 
 class MatchingEngine:
-    """
-    Executes orders against the OrderBook. Generates Fill objects.
-    Does NOT modify the book directly for data reads —
-    modifications happen via order status and deque operations during sweep.
-    """
+    """Runs orders against the book and returns fills."""
 
     def __init__(self, order_book: OrderBook):
         self.book = order_book
 
     def submit_order(self, order: Order) -> list[Fill]:
-        """
-        Route to correct handler by order type.
-        Time complexity: O(handler-specific).
-        """
-        # Interview signal: why separate handlers?
-        # Each order type has different execution semantics.
-        # Single function with if-else chains is harder to test and extend.
+        """Route by order type. O(handler-specific)."""
+        # Why: separate handlers? Different semantics per type, easier to test.
         dispatch = {
             OrderType.MARKET: self.match_market_order,
             OrderType.LIMIT: self.match_limit_order,
@@ -29,12 +20,8 @@ class MatchingEngine:
         return dispatch[order.order_type](order)
 
     def match_market_order(self, order: Order) -> list[Fill]:
-        """
-        Execute market order at best available prices. Sweep until filled or book empty.
-        Time complexity: O(k * m) where k=price levels consumed, m=orders per level.
-        """
-        # Interview signal: what is "walking the book"?
-        # A large market order consuming multiple price levels. Each level = worse price.
+        """Sweep book at best prices until filled or empty. O(k * m)."""
+        # Why: walking the book? Large market orders eat multiple price levels.
         opposing = self.book.asks if order.side == Side.BUY else self.book.bids
         fills = []
         remaining = order.quantity
@@ -82,13 +69,9 @@ class MatchingEngine:
         return fills
 
     def match_limit_order(self, order: Order) -> list[Fill]:
-        """
-        Limit order: match immediately if it crosses the spread, then rest in book.
-        Time complexity: O(k * m) for aggressive part + O(log n) for resting.
-        """
-        # Interview signal: when does a limit order match immediately?
-        # Limit BUY at 100.60 when best ask is 100.50 → crosses spread → matches now.
-        # Fill price = 100.50 (maker's price), NOT 100.60 (your limit).
+        """Match if crossing spread, rest remainder. O(k * m) + O(log n)."""
+        # Why: when does limit match? Buy at 100.60 vs ask 100.50 crosses now.
+        # Fill at maker price 100.50, not your limit.
         opposing = self.book.asks if order.side == Side.BUY else self.book.bids
         fills = []
         remaining = order.quantity
@@ -143,35 +126,20 @@ class MatchingEngine:
         return fills
 
     def execute_ioc(self, order: Order) -> list[Fill]:
-        """
-        Immediate-Or-Cancel: fill as much as possible now. Discard remainder.
-        Does NOT add remainder to book.
-        Time complexity: O(k * m) where k=price levels consumed, m=orders per level.
-        """
-        # Interview signal: IOC vs FOK?
-        # IOC = best effort fill, cancel rest. FOK = all or nothing.
+        """Fill now, discard remainder. O(k * m)."""
+        # Why: IOC vs FOK? IOC fills what it can. FOK is all or nothing.
         fills = self.match_market_order(order)
         return fills
 
     def execute_fok(self, order: Order) -> list[Fill]:
-        """
-        Fill-Or-Kill: check if full fill is possible BEFORE executing.
-        If not possible: return empty list, book is UNCHANGED.
-        Time complexity: O(n * m) pre-check + O(k * m) execution.
-        """
-        # Interview signal: why check first?
-        # A partial execution followed by cancel would modify the book.
-        # FOK must leave the book unchanged on failure.
+        """Pre-check full fill, execute or kill. O(n * m) + O(k * m)."""
+        # Why: check first? Partial fill would change the book on failure.
         if self._available_quantity(order) < order.quantity:
             return []
         return self.match_market_order(order)
 
     def _available_quantity(self, order: Order) -> int:
-        """
-        Count available quantity on opposing side at crossable prices.
-        Does NOT execute anything. Used by FOK pre-check.
-        Time complexity: O(n * m) where n=levels, m=orders per level.
-        """
+        """Count opposing active qty for FOK pre-check. O(n * m)."""
         opposing = self.book.asks if order.side == Side.BUY else self.book.bids
         available = 0
         for price, level in opposing.items():
