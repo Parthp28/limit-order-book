@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+venv/
+env/
+.env
+
+# Cython build artifacts
+*.c
+*.cpython-*.so
+
+# Cursor and AI tool files
+.cursorrules
+CURSOR_*.md
+CLAUDE.md
+
+# Project tracking files
+PROGRESS.md
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test and coverage artifacts
+.coverage
+htmlcov/
+.pytest_cache/

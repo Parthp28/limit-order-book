@@ -1,0 +1,6 @@
+services:
+  order-book:
+    build: .
+    volumes:
+      - .:/app
+    command: python -m pytest benchmarks/bench_matching.py -s -v
