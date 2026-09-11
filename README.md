@@ -85,10 +85,3 @@ pytest benchmarks/bench_matching.py::test_one_million_orders_throughput -s -v
 pytest benchmarks/bench_matching.py --benchmark-only -v
 ```
 
-## What this demonstrates
-
-The matching engine behind every electronic exchange: price-time priority, partial fills, IOC/FOK semantics, FIX 4.2 wire parsing.
-
-Data structure choices follow real market microstructure. Cancel-heavy workloads, nanosecond time priority, maker-price execution rules. SortedDict, lazy deletion, deque FIFO.
-
-715k orders/sec with sub-6µs p99 in pure Python. Cython on the tightest matching loop. Built to walk through line by line in a quant SWE interview.
